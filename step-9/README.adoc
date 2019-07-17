@@ -1,0 +1,187 @@
+= Client-side web application using AngularJS 
+
+TIP: The corresponding source code is in the `step-9` folder of the guide repository.
+
+So far our web interface was using traditional server-side rendering of HTML content.
+Some types of applications can take advantage of client-side rendering to improve user experience by avoiding full page reloads, and approaching the experience of native applications.
+
+Many popular frameworks exist for that purpose.
+We chose the popular http://angularjs.org/[AngularJS framework] for this guide, but one could equally choose https://facebook.github.io/react/[React], https://vuejs.org/[Vue.js], http://riotjs.com/[Riot] or another framework/library without any loss of generality.
+
+== Single page application
+
+The wiki editing application that we are building allows to select a page, and edit it with the first half of the screen being a HTML preview, and the other half being the Markdown editor:
+
+image::images/edit-page.png[]
+
+The HTML preview is being rendered by calling a new endpoint in our backend.
+Rendering is triggered when the Markdown editor text changes.
+To avoid overloading the backend with unnecessary requests when the user is busy typing Markdown, a delay is being introduced so as to only trigger the rendering when no change has been made during that delay.
+
+The application interface is also dynamic, as new pages make the deletion button disappear:
+
+image::images/new-page.png[]
+
+== Vert.x Backend
+
+=== Simplifying the HTTP verticle code
+
+A client-side application needs a backend that exposes:
+
+1. the static HTML, CSS and JavaScript content to bootstrap applications in web browsers, and
+2. a web API, typically a HTTP/JSON service.
+
+We simplified the HTTP verticle implementation to _just_ cover what is needed.
+Starting from the RxJava version from _step #8_, we removed all server-side rendering code as well as the authentication and JWT token issuing code to expose a plain open HTTP/JSON interface.
+
+Of course building a version that leverages JWT tokens and authentication makes sense for a real-world deployments, but now that we have covered these features we would rather focus on the essential bits in this part of the guide.
+
+As an example, the `apiUpdatePage` method implementation code is now:
+
+[source,java,indent=0]
+----
+include::src/main/java/io/vertx/guides/wiki/http/HttpServerVerticle.java[tags=apiUpdatePage]
+----
+
+=== Exposed routes
+
+The HTTP/JSON API is exposed through the sames routes as in the previous steps:
+
+[source,java,indent=0]
+----
+include::src/main/java/io/vertx/guides/wiki/http/HttpServerVerticle.java[tags=routes]
+----
+
+The front application static assets are being served from `/app`, and we redirect requests to `/` to the `/app/index.html` static file:
+
+[source,java,indent=0]
+----
+include::src/main/java/io/vertx/guides/wiki/http/HttpServerVerticle.java[tags=static-assets]
+----
+<1> Disabling caching is useful in development.
+<2> By default the files are expected to be in the `webroot` package on the _classpath_, so the files shall be placed under `src/main/resources/webroot` in a Maven or Gradle project.
+
+Last but not least, we anticipate that the application will need the backend to render Markdown to HTML, so we offer a HTTP POST endpoint for this purpose:
+
+[source,java,indent=0]
+----
+include::src/main/java/io/vertx/guides/wiki/http/HttpServerVerticle.java[tags=preview-rendering]
+----
+
+== AngularJS frontend
+
+TIP: This guide is not a proper introduction to AngularJS (https://docs.angularjs.org/tutorial[see the official tutorial instead]), we assume some familiarity with the framework from the reader.
+
+=== Application view
+
+The interface fits in a single HTML file located at `src/main/resources/webroot/index.html`.
+The `head` section is:
+
+[source,html,indent=0]
+----
+include::src/main/resources/webroot/index.html[tags=head]
+----
+<1> The AngularJS module is named `wikiApp`.
+<2> `wiki.js` holds the code for our AngularJS module and controller.
+
+As you can see beyond AngularJS we are using the following dependencies from external CDNs:
+
+* https://getbootstrap.com/[Boostrap] to style our interface,
+* http://fontawesome.io/[Font Awesome] to provide icons,
+* https://lodash.com/[Lodash] to help with some functional idioms in our JavaScript code.
+
+Bootstrap requires some further scripts that can be loaded at the end of the document for performance reasons:
+
+[source,html,indent=0]
+----
+include::src/main/resources/webroot/index.html[tags=bottom]
+----
+
+Our AngularJS controller is called `WikiController` and it is bound to a `div` which is also a Bootstrap container:
+
+[source,html,indent=0]
+----
+include::src/main/resources/webroot/index.html[tags=container]
+----
+
+The buttons on top of the interface consist of the following elements:
+
+[source,html,indent=0]
+----
+include::src/main/resources/webroot/index.html[tags=buttons-row]
+----
+<1> For each wiki page name we generate an element using `ng-repeat` and `ng-click` to define the controller action (`load`) when it is being clicked.
+<2> The refresh button is bound to the `reload` controller action. All other buttons work the same way.
+<3> The `ng-show` directive allows us to show or hide the element depending on the controller `pageExists` method value.
+<4> This `div` is used to display notifications of success or failures.
+
+The Markdown preview and editor elements are the following:
+
+[source,html,indent=0]
+----
+include::src/main/resources/webroot/index.html[tags=markdown]
+----
+<1> `ng-model` binds the `textarea` content to the `pageMarkdown` property of the controller.
+
+=== Application controller
+
+The `wiki.js` JavaScript starts with an AngularJS module declaration:
+
+[source,javascript,indent=0]
+----
+include::src/main/resources/webroot/wiki.js[tags=module-decl]
+----
+
+The `wikiApp` module has no plugin dependency, and declares a single `WikiController` controller.
+The controller requires dependency injection of the following objects:
+
+* `$scope` to provide DOM scoping to the controller, and
+* `$http` to perform asynchronous HTTP requests to the backend, and
+* `$timeout` to trigger actions after a given delay while staying tied to the AngularJS life-cycle (e.g., to ensure that any state modification triggers view changes, which is not the case when using the https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/setTimeout[classic setTimeout function]).
+
+Controller methods are being tied to the `$scope` object.
+Let us start with 3 simple methods:
+
+[source,javascript,indent=0]
+----
+include::src/main/resources/webroot/wiki.js[tags=new-reload-exists]
+----
+
+Creating a new page consists in initializing controller properties that are attached to the `$scope` object.
+Reloading the pages objects from the backend is a matter of performing a HTTP GET request (note that the `$http` request methods return promises).
+The `pageExists` method is being used to show / hide elements in the interface.
+
+Loading the content of the page is also a matter of performing a HTTP GET request, and updating the preview a DOM manipulation:
+
+[source,javascript,indent=0]
+----
+include::src/main/resources/webroot/wiki.js[tags=load]
+----
+
+The next methods support saving / updating and deleting pages.
+For these operations we used the full `then` promise method with the first argument being called on success, and the second one being called on error.
+We also introduce the `success` and `error` helper methods to display notifications (3 seconds on success, 5 seconds on error):
+
+[source,javascript,indent=0]
+----
+include::src/main/resources/webroot/wiki.js[tags=save-delete-notifications]
+----
+
+initializing the application state and views is done by fetching the pages list, and starting with a blank new page editor:
+
+[source,javascript,indent=0]
+----
+include::src/main/resources/webroot/wiki.js[tags=init]
+----
+
+Finally here is how we perform live rendering of Markdown text:
+
+[source,javascript,indent=0]
+----
+include::src/main/resources/webroot/wiki.js[tags=live-rendering]
+----
+<1> `$scope.$watch` allows being notified of state changes. Here we monitor changes on the `pageMarkdown` property that is bound to the editor `textarea`.
+<2> 300 milliseconds is a _fine_ delay to trigger rendering if nothing has changed in the editor.
+<3> Timeouts are promise, so if the state has changed we cancel the previous one and create a new one. This is how we delay rendering instead of doing it on every keystroke.
+<4> We ask the backend to render the editor text into some HTML, then refresh the preview.
+

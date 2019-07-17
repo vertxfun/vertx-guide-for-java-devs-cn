@@ -1,0 +1,61 @@
+= A gentle guide to asynchronous programming with Eclipse Vert.x for Java developers
+Julien Ponge <julien@ponge.org> ; Thomas Segismont <tsegismo@redhat.com> ; Julien Viet <jviet@redhat.com>
+v1.4.0, 2018/11/29
+:doctype: book
+
+ifdef::env-github[]
+//
+image:https://travis-ci.org/vert-x3/vertx-guide-for-java-devs.svg?branch=master["Build Status (Linux)", link="https://travis-ci.org/vert-x3/vertx-guide-for-java-devs"]
+//
+image:https://ci.appveyor.com/api/projects/status/sps4csqk3e5v4gfe/branch/master?svg=true["Build Status (Windows)", link="https://ci.appveyor.com/project/jponge/vertx-guide-for-java-devs/branch/master"]
+//
+endif::[]
+
+:leveloffset: +1
+
+NOTE: You can read the latest published version of the guide at http://vertx.io/docs/guide-for-java-devs/
+
+ifdef::rendered-pdf-link[]
+NOTE: This document is also link:{rendered-pdf-link}[available as a PDF].
+endif::[]
+
+.Acknowledgements
+This document has received contributions from Arnaud Esteve, Marc Paquette, Ashley Bye, Ger-Jan te Dorsthorst, Htet Aung Shine and others.
+
+:imagesdir: intro
+include::intro/README.adoc[]
+
+:imagesdir: step-1
+include::step-1/README.adoc[]
+
+:imagesdir: step-2
+include::step-2/README.adoc[]
+
+:imagesdir: step-3
+include::step-3/README.adoc[]
+
+:imagesdir: step-4
+include::step-4/README.adoc[]
+
+:imagesdir: step-5
+include::step-5/README.adoc[]
+
+:imagesdir: step-6
+include::step-6/README.adoc[]
+
+:imagesdir: step-7
+include::step-7/README.adoc[]
+
+:imagesdir: step-8
+include::step-8/README.adoc[]
+
+:imagesdir: step-9
+include::step-9/README.adoc[]
+
+:imagesdir: step-10
+include::step-10/README.adoc[]
+
+:imagesdir: outro
+include::outro/README.adoc[]
+
+:leveloffset: -1
