@@ -1,26 +1,34 @@
-= A gentle guide to asynchronous programming with Eclipse Vert.x for Java developers
+= 阅读前须知
+
+这是 Vert.x 官方文档[https://github.com/vert-x3/vertx-guide-for-java-devs[vertx-guide-for-java-devs]]的非官方中文翻译。
+
+本项目对应的英文原版在 GitHub 上的位置： https://github.com/vert-x3/vertx-guide-for-java-devs/tree/1.4.0
+
+Vert.x 的版本是 3.6.0 ，翻译不当之处，欢迎指正!
+
+== 适合Java开发人员使用Eclipse Vert.x进行异步编程的指南
 Julien Ponge <julien@ponge.org> ; Thomas Segismont <tsegismo@redhat.com> ; Julien Viet <jviet@redhat.com>
 v1.4.0, 2018/11/29
 :doctype: book
 
-ifdef::env-github[]
+//ifdef::env-github[]
 //
-image:https://travis-ci.org/vert-x3/vertx-guide-for-java-devs.svg?branch=master["Build Status (Linux)", link="https://travis-ci.org/vert-x3/vertx-guide-for-java-devs"]
+//image:https://travis-ci.org/vert-x3/vertx-guide-for-java-devs.svg?branch=master["Build Status (Linux)", link="https://travis-ci.org/vert-x3/vertx-guide-for-java-devs"]
 //
-image:https://ci.appveyor.com/api/projects/status/sps4csqk3e5v4gfe/branch/master?svg=true["Build Status (Windows)", link="https://ci.appveyor.com/project/jponge/vertx-guide-for-java-devs/branch/master"]
+//image:https://ci.appveyor.com/api/projects/status/sps4csqk3e5v4gfe/branch/master?svg=true["Build Status (Windows)", link="https://ci.appveyor.com/project/jponge/vertx-guide-for-java-devs/branch/master"]
 //
-endif::[]
+//endif::[]
 
 :leveloffset: +1
 
-NOTE: You can read the latest published version of the guide at http://vertx.io/docs/guide-for-java-devs/
+NOTE: 您可以在 http://vertx.io/docs/guide-for-java-devs/ 上阅读最新发布版本的指南
 
 ifdef::rendered-pdf-link[]
 NOTE: This document is also link:{rendered-pdf-link}[available as a PDF].
 endif::[]
 
-.Acknowledgements
-This document has received contributions from Arnaud Esteve, Marc Paquette, Ashley Bye, Ger-Jan te Dorsthorst, Htet Aung Shine and others.
+.致谢
+本文档收到了来自 Arnaud Esteve, Marc Paquette, Ashley Bye, Ger-Jan te Dorsthorst, Htet Aung Shine 以及其他人的贡献.
 
 :imagesdir: intro
 include::intro/README.adoc[]
