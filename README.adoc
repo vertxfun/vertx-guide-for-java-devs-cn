@@ -7,9 +7,9 @@
 Vert.x 的版本是 3.6.0 ，翻译不当之处，欢迎指正!
 
 == 适合Java开发人员使用Eclipse Vert.x进行异步编程的指南
-Julien Ponge <julien@ponge.org> ; Thomas Segismont <tsegismo@redhat.com> ; Julien Viet <jviet@redhat.com>
-v1.4.0, 2018/11/29
-:doctype: book
+//Julien Ponge <julien@ponge.org> ; Thomas Segismont <tsegismo@redhat.com> ; Julien Viet <jviet@redhat.com>
+//v1.4.0, 2018/11/29
+//:doctype: book
 
 //ifdef::env-github[]
 //
