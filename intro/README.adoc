@@ -20,13 +20,13 @@
 9. 客户端采用 AngularJS 来开发单页面应用程序。
 10. 使用统一的 Vert.x 事件总线集成在 SockJS 上的实时 Web 编程。
 
-NOTE: 本文档和代码示例的源码可以 from https://github.com/vert-x3/vertx-guide-for-java-devs 获得。
+NOTE: 本文档和代码示例的源码可以 https://github.com/vert-x3/vertx-guide-for-java-devs 获得。
 我们欢迎提交问题报告，反馈以及推送请求！
 
 == 什么是 Vert.x？
 
-[quote, Vert.x website]
-Eclipse Vert.x 是一个在 JVM 上构建响应式应用程序的工具包。
+[quote]
+Eclipse Vert.x 是一个在 JVM 上构建响应式应用程序的工具包。 — Vert.x 官网
 
 Eclipse Vert.x (以下简称 _Vert.x_ ) 是 Eclipse 基金会下的一个开源项目。
 Vert.x 于 2012 年由 Tim Fox 发起的。
