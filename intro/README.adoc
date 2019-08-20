@@ -1,39 +1,39 @@
-= Introduction
+= 介绍
 
-This guide is a gentle introduction to asynchronous programming with Vert.x, primarily aimed at developers familiar with mainstream non-asynchronous web development frameworks and libraries (e.g., Java EE, Spring).
+本指南简要的介绍了 Vertx 的异步编程，主要针对使用主流非异步 Web 开发框架和库(例如 Java EE , Spring)的开发人员。
 
-== About this guide
+== 关于本指南
 
-We assume that the reader is familiar with the Java programming language and its ecosystem.
+我们假定读者熟悉 Java 编程语言以及它的生态系统。
 
-We will start from a wiki web application backed by a relational database and server-side rendering of pages; then we will evolve the application through several steps until it becomes a modern single-page application with "real-time".footnote:[Note that the widespread usage of the term "real-time" in the context of web technologies shall not be confused with _hard_ or _soft_ real-time in specialized operating systems.] web features.
-Along the way you will learn to:
+我们将从一个由关系型数据库和服务器端页面渲染支持 Wiki Web 应用程序开始；然后我们将通过几个步骤改进应用程序，直到它成为具有"实时"footnote:[请注意 在Web技术环境中广泛使用的术语"实时"不应该与特定操作系统的 _硬件_ 或 _软件_ 的实时相混淆。]特征的现代单页面应用。
+在整个过程中，你将会学到：
 
-1. Design a web application with server-side rendering of pages through templates, and using a relational database for persisting data.
-2. Cleanly isolate each technical component as a reusable event processing unit called a _verticle_.
-3. Extract Vert.x services for facilitating the design of verticles that communicate with each other seamlessly both within the same JVM process or among distributed nodes in a cluster.
-4. Testing code with asynchronous operations.
-5. Integrating with third-party services exposing a HTTP/JSON web API.
-6. Exposing a HTTP/JSON web API.
-7. Securing and controlling access using HTTPS, user authentication for web browser sessions and JWT tokens for third-party client applications.
-8. Refactoring some code to use reactive programming with the popular RxJava library and its Vert.x integration.
-9. Client-side programming of a single-page application with AngularJS.
-10. Real-time web programming using the unified Vert.x event bus integration over SockJS.
+1. 使用模板技术设计一个服务端渲染的 Web 应用，并且使用关系型数据库来持久化数据。
+2. 清晰地抽离出每个技术组件，作为一个可以重复使用的事件处理单元被称为 _verticle_。
+3. 抽取 Vert.x 的服务，以便于设计在同一 JVM 进程内或集群中的分布式节点之间进行无缝通信的 verticles。
+4. 使用异步操作测试代码。
+5. 与暴露 HTTP/JSON Web API的第三方服务集成。
+6. 对外提供 HTTP/JSON Web API。
+7. 使用 HTTPS 来保护和控制访问、Web 浏览器会话验证用户身份以及第三方客户端应用的 JWT 令牌。
+8. 借助当下流行的 RxJava 库及它在 Vert.x 集成的反应式编程来重构一些代码。
+9. 客户端采用 AngularJS 来开发单页面应用程序。
+10. 使用统一的 Vert.x 事件总线集成在 SockJS 上的实时 Web 编程。
 
-NOTE: The source of both this document and the code examples are available from https://github.com/vert-x3/vertx-guide-for-java-devs.
-We welcome issue reports, feedback and pull-requests!
+NOTE: 本文档和代码示例的源码可以 from https://github.com/vert-x3/vertx-guide-for-java-devs 获得。
+我们欢迎提交问题报告，反馈以及推送请求！
 
-== What is Vert.x?
+== 什么是 Vert.x？
 
 [quote, Vert.x website]
-Eclipse Vert.x is a toolkit for building reactive applications on the JVM.
+Eclipse Vert.x 是一个在 JVM 上构建响应式应用程序的工具包。
 
-Eclipse Vert.x (which we will just call _Vert.x_ in the remainder of this document) is an opensource project at the Eclipse Foundation.
-Vert.x was initiated in 2012 by Tim Fox.
+Eclipse Vert.x (以下简称 _Vert.x_ ) 是 Eclipse 基金会下的一个开源项目。
+Vert.x 于 2012 年由 Tim Fox 发起的。
 
-Vert.x is not a framework but a toolkit: the core library defines the fundamental APIs for writing asynchronous networked applications, and then you can pick the useful modules for your application (e.g., database connection, monitoring, authentication, logging, service discovery, clustering support, etc).
-Vert.x is based on the http://netty.io/[Netty project], a high-performance asynchronous networking library for the JVM.
-Vert.x will let you access the Netty internals _if need be_, but in general you will better benefit from the higher-level APIs that Vert.x provides while not sacrificing performance compared to _raw_ Netty.
+Vert.x 不是一个框架，而是一个工具包：它的核心库定义编写异步网络应用程序的基础 API，然后你可以选择一些对应用有用的模块(例如，数据库连接，监控，身份验证，日志，服务发现，集群支持等等)。
+Vert.x 基于 http://netty.io/[Netty 项目] - 一个为 JVM 设计的高性能异步网络库。
+_如果需要的话_，Vert.x 允许你访问 Netty 的内部结构。但是通常来说，使用 Vert.x 提供的高层次 API 会更有利于你编写代码，同时又不会有性能上的损失，相比较 _原生_ Netty来说。
 
 Vert.x does not impose any packaging or build environment.
 Since Vert.x core itself is just a regular Jar library it can be embedded inside applications packaged as a set of Jars, a single Jar with all dependencies, or it can even be deployed inside popular component and application containers.
@@ -61,11 +61,11 @@ There are 2 key concepts to learn in Vert.x:
 Many networking libraries and frameworks rely on a simple threading strategy: each network client is being assigned a thread upon connection, and this thread deals with the client until it disconnects.
 This is the case with Servlet or networking code written with the `java.io` and `java.net` packages.
 While this _"synchronous I/O"_ threading model has the advantage of remaining simple to comprehend, it hurts scalability with too many concurrent connections as system threads are not cheap, and under heavy loads an operating system kernel spends significant time _just_ on thread scheduling management.
-In such cases we need to move to _"asynchronous I/O"_ for which Vert.x provides a solid foundation. 
+In such cases we need to move to _"asynchronous I/O"_ for which Vert.x provides a solid foundation.
 
 The unit of deployment in Vert.x is called a _Verticle_.
 A verticle processes incoming events over an _event-loop_, where events can be anything like receiving network buffers, timing events, or messages sent by other verticles.
-Event-loops are typical in asynchronous programming models: 
+Event-loops are typical in asynchronous programming models:
 
 image::images/event-loop.png[]
 
@@ -86,7 +86,7 @@ Incoming network data are being received from accepting threads then passed as e
 When a verticle opens a network server and is deployed more than once, then the events are being distributed to the verticle instances in a round-robin fashion which is very useful for maximizing CPU usage with lots of concurrent networked requests.
 Finally, verticles have a simple start / stop life-cycle, and verticles can deploy other verticles.
 
-=== Event bus 
+=== Event bus
 
 Verticles form technical units of deployments of code in Vert.x.
 The Vert.x _event bus_ is the main tool for different verticles to communicate through asynchronous message passing.
