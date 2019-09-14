@@ -35,78 +35,55 @@ Vert.x 不是一个框架，而是一个工具包：它的核心库定义编写�
 Vert.x 基于 http://netty.io/[Netty 项目] - 一个为 JVM 设计的高性能异步网络库。
 _如果需要的话_，Vert.x 允许你访问 Netty 的内部结构。但是通常来说，使用 Vert.x 提供的高层次 API 会更有利于你编写代码，同时又不会有性能上的损失，相比较 _原生_ Netty来说。
 
-Vert.x does not impose any packaging or build environment.
-Since Vert.x core itself is just a regular Jar library it can be embedded inside applications packaged as a set of Jars, a single Jar with all dependencies, or it can even be deployed inside popular component and application containers.
+Vertx.x 不会强制要求任何包或者构建环境。因为 Vert.x core 本身就是一个常规的 Jar 包，能够作为 jar 包(单个 jar 包已经包含了所有的依赖) 的方式被嵌入到应用之中，甚至可以在流行的组件框架和应用容器中部署使用。
 
-Because Vert.x was designed for asynchronous communications it can deal with more concurrent network connections with less threads than synchronous APIs such as Java servlets or `java.net` socket classes.
-Vert.x is useful for a large range of applications: high volume message / event processing, micro-services, API gateways, HTTP APIs for mobile applications, etc.
-Vert.x and its ecosystem provide all sorts of technical tools for building end-to-end reactive applications.
+由于 Vert.x 生来就是为了设计异步通信，因此相比较于 Java servlets 或者 `java.net` socket classes 这类同步的 API 来说，Vert.x 使用较少的线程就能处理更多的并发网络连接。Vert.x 对多种类型的应用都有用：高容量消息/事件处理、微服务、API 网关、包括为移动应用提供的 HTTP APIs 等等。Vert.x 及其相关生态为构建端到端响应式应用提供了各种技术工具。
 
-While it may sound like Vert.x is only useful for demanding applications, the present guide also states that Vert.x works very well for more traditional web applications.
-As we will see, the code will remain relatively easy to comprehend, but if the application needs to face a sudden peak in traffic then the code is already written with the essential ingredient for scaling up: _asynchronous processing of events_.
+尽管听起来 Vert.x 仅适用于要求苛刻的应用，但正如本手册将要展示的 Vert.x 对传统 Web 应用也同样适用。我们将会看到，代码看上去会相对比较容易理解，即便是处理突发的流量洪峰，采用 _异步事件处理_ 方式编写的代码都能轻松处理。
 
-Finally, it is worth mentioning that Vert.x is _polyglot_ as it supports a wide range of popular JVM languages: Java, Groovy, Scala, Kotlin, JavaScript, Ruby and Ceylon.
-The goal when supporting a language in Vert.x is not just to provide access to the APIs, but also to make sure that the language-specific APIs are idiomatic in each target language (e.g., using Scala futures in place of Vert.x futures).
-It is well-possible to develop different technical parts of a Vert.x application using different JVM languages.
+最后但值得一提的是，Vert.x 支持多种流行的 JVM 语言：Java、 Groovy、Scala、Kotlin、JavaScript、Ruby 和 Ceylon。Vert.x 支持多语言的目标不仅仅是通过 API 的访问，而是确保每一种语言都可以采用其特有的语言特性、以符合语言习惯的方式来访问 API (例如：使用 Scala 的 futures 来替换 Vert.x 的 future)。Vert.x 也能很好地支持在一个应用中，采用同步的 JVM 语言来开发不同的技术模块。
 
-== Core Vert.x concepts
+== Vert.x 核心概念
+在 Vert.x 中有两个需要掌握的核心概念：
 
-There are 2 key concepts to learn in Vert.x:
+1. 什么是 _verticle_
+2. _event bus_ 如何使不同的 verticles 之间通信
 
-1. what a _verticle_ is, and
-2. how the _event bus_ allows verticles to communicate.
+=== 线程和编程模型
 
-=== Threading and programming models
+很多网络库和框架都依赖一种简单的线程策略：每一个网络客户端都被分配一个线程用于处理连接，并且在该连接在断开前，会一直负责处理客户端的请求。使用 Servlet 或者 由 `java.io` 和 `java.net` 包编写的网络程序都是这种类型。尽管这种 _同步I/O_ 线程模型的代码相对简洁容易理解，但系统线程开销极大，在高负载的情况下，操作系统内核 _仅在线程调度_ 上就会耗费大量时间。在大量并发请求的时候，可扩展性极差。在这种情况下，我们需要转向 _异步I/O_ ，Vert.x 在这方面提供了坚实的基础。
 
-Many networking libraries and frameworks rely on a simple threading strategy: each network client is being assigned a thread upon connection, and this thread deals with the client until it disconnects.
-This is the case with Servlet or networking code written with the `java.io` and `java.net` packages.
-While this _"synchronous I/O"_ threading model has the advantage of remaining simple to comprehend, it hurts scalability with too many concurrent connections as system threads are not cheap, and under heavy loads an operating system kernel spends significant time _just_ on thread scheduling management.
-In such cases we need to move to _"asynchronous I/O"_ for which Vert.x provides a solid foundation.
-
-The unit of deployment in Vert.x is called a _Verticle_.
-A verticle processes incoming events over an _event-loop_, where events can be anything like receiving network buffers, timing events, or messages sent by other verticles.
-Event-loops are typical in asynchronous programming models:
+Vert.x 中部署的单元被称作 _Verticle_ 。Verticle 是基于 _事件循环_ 来处理到来的事件，事件可以是接收网络缓冲、计时事件或者来自其它 Verticle 的消息。在异步编程模型中，事件循环是非常典型的一类：
 
 image::images/event-loop.png[]
 
-Each event shall be processed in a _reasonable_ amount of time to not block the event loop.
-This means that _thread blocking_ operations shall not be performed while executed on the event loop, exactly like processing events in a graphical user interface (e.g., freezing a Java / Swing interface by doing a slow network request).
-As we will see later in this guide, Vert.x offers mechanisms to deal with blocking operations outside of the event loop.
-In any case Vert.x emits warnings in logs when the event loop has been processing an event for _too long_, which is also configurable to match application-specific requirements (e.g., when working on slower IoT ARM boards).
+每个事件都应在 _合理时间_ 内得到处理，不应该阻塞事件循环。这意味着当在事件循环中执行的时候， _线程阻塞_ 操作不应该被响应，就像在处理图形用户接口(例如，卡住 Java 或者 Swing 界面，去处理一个很慢的网络请求)的时候一样。在本手册的后面将会看到，Vert.x 提供了许多在事件循环外来处理阻塞操作的机制。当发现事件循环中正在处理一个 _耗时太长_ 事件时，Vert.x 会在日志中发出警告。为了匹配应用相关的需求，这个特性也是可以配置的(例如：当应用运行在比较慢的 Iot ARM 主板上的时候)。
 
-Every event loop is attached to a thread.
-By default Vert.x attaches 2 event loops per CPU core thread.
-The direct consequence is that a regular verticle always processes events on the same thread, so there is no need to use thread coordination mechanisms to manipulate a verticle state (e.g, Java class fields).
+每一个事件循环都运行在线程上。默认情况下，一个 CPU 核心线程上运行着2个事件循环。直接结果就是一个常规的 Verticle 将始终在同一个线程上处理事件，因此无需使用线程协调机制来调整 Verticle 的状态(例如：Java class fields)。
 
-A verticle can be passed some configuration (e.g., credentials, network addresses, etc) and a verticle can be deployed several times:
+Verticle 可以进行一些配置(例如：证书、网络地址等等)，并且能够被部署多次：
 
 image::images/verticle-threading-config.png[]
 
-Incoming network data are being received from accepting threads then passed as events to the corresponding verticles.
-When a verticle opens a network server and is deployed more than once, then the events are being distributed to the verticle instances in a round-robin fashion which is very useful for maximizing CPU usage with lots of concurrent networked requests.
-Finally, verticles have a simple start / stop life-cycle, and verticles can deploy other verticles.
+传入的网络数据将会接收线程收到，并以事件的方式传递给相应的 Verticle 处理。当一个 Verticle 作为一个网络服务器被部署多次时，事件将会采用轮询方式被分发给 Verticle 实例，好处在于有利于在处理大量并发网络请求时最大化 CPU 的利用率。最后，Verticle 只有简单的 开始 和 结束 的生命周期，并且 Verticle 可以部署其它的 Verticle 。
 
-=== Event bus
+=== 事件总线
 
-Verticles form technical units of deployments of code in Vert.x.
-The Vert.x _event bus_ is the main tool for different verticles to communicate through asynchronous message passing.
-For instance suppose that we have a verticle for dealing with HTTP requests, and a verticle for managing access to the database.
-The event bus allows the HTTP verticle to send a request to the database verticle that performs a SQL query, and responds back to the HTTP verticle:
+在 Vert.x 中，Verticle 将代码组织成可部署的单元。Vert.x _事件总线_ 是不同的 Verticle 之间通过异步消息传递进行通信的主要工具。例如，假定我们有一个 Verticle 正在处理 HTTP 请求，另外一个 Verticle 负责管理数据库访问。事件总线允许 HTTP Verticle 发送请求给数据库 Verticle 来执行 SQL 查询，并将结果返回给 HTTP Verticle：
 
 image::images/event-bus.png[]
 
-The event-bus allows passing any kind of data, although JSON is the preferred exchange format since it allows verticles written in different languages to communicate, and more generally JSON is a popular general-purpose semi-structured data marshaling text format.
+事件总线允许传递任何类型的数据，尽管当下 JSON 是首选的交换格式 - 因为它允许以不同语言编写的 Verticle 进行通信，更一般地说， JSON 是一种流行的通用半结构化数据封装文本格式。
 
-Message can be sent to _destinations_ which are free-form strings.
-The event bus supports the following communication patterns:
+消息能以自由格式的字符串的方式发送到 _目的地_。事件总线支持下面几种通信模式：
 
-1. point-to-point messaging, and
-2. request-response messaging and
-3. publish / subscribe for broadcasting messages.
+1. 点对点消息
+2. 请求 - 响应消息
+3. 发布 - 订阅广播消息
 
-The event bus allows verticles to transparently communicate not just within the same JVM process:
+事件总线允许 Verticle 透明地通信，不仅仅限于在同一个 JVM 进程中：
 
-* when network clustering is activated, the event bus is _distributed_ so that messages can be sent to verticles running on other application nodes,
-* the event-bus can be accessed through a simple TCP protocol for third-party applications to communicate,
-* the event-bus can also be exposed over general-purpose messaging bridges (e.g, AMQP, Stomp),
-* a SockJS bridge allows web applications to seamlessly communicate over the event bus from JavaScript running in the browser by receiving and publishing messages just like any verticle would do.
+* 当打开网络集群模式的时候，事件总线是 _分布式的_ ，因此消息可以发送给在其它应用节点上运行的 Verticle
+* 当处理第三方应用通信时，可以通过简单的 TCP 协议来访问事件总线
+* 事件总线也可以通过通用的消息投递桥接器暴露(例如：AMQP、Stomp)
+* SockJS bridge 允许 Web 应用就像其它 Verticle 一样，基于事件总线在运行于浏览器中的 JavaScript 无缝地接收和发布消息
